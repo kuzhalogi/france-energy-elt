@@ -42,7 +42,7 @@ layers, each its own schema in Postgres:
   (energy in MWh, plus peak and average load).
 - `marts`   the final tables, shaped as a star schema: two shared dimensions
   (`dim_region`, `dim_date`) and three fact tables for consumption, weather, and
-  production. These are what you'd point a dashboard or analysis at.
+  production.
 
 ## Testing
 
