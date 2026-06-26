@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Data — large / regenerated, never commit
+data/
+processed/
+logs/
+
+# dbt — compiled artifacts & installed packages
+energy_analytics/target/
+energy_analytics/dbt_packages/
+energy_analytics/logs/
+dbt_cloud.yml

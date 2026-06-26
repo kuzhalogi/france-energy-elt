@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  - name: dim_region
+    description: "Conformed region dimension (INSEE code → name)."
+    columns:
+      - name: region_code
+        tests: [unique, not_null]
+      - name: region_name
+        tests: [not_null]
+
+  - name: dim_date
+    description: "Conformed daily date dimension (2013–2026 spine)."
+    columns:
+      - name: date
+        tests: [unique, not_null]
+      - name: date_key
+        tests: [unique, not_null]
+
+  - name: fact_consumption_daily
+    description: "Daily electricity consumption per region."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ["date", "region_code"]
+    columns:
+      - name: date
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date
+      - name: region_code
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_code
+      - name: consumption_mwh
+        tests: [not_null]
+
+  - name: fact_weather_daily
+    description: "Daily temperature per region."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ["date", "region_code"]
+    columns:
+      - name: date
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date
+      - name: region_code
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_code
+
+  - name: fact_production_annual
+    description: "Annual production by source per region."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ["year", "region_code"]
+    columns:
+      - name: region_code
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_code
+      - name: year
+        tests: [not_null]

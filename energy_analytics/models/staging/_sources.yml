@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Bronze layer — processed CSVs loaded as-is by scripts/load.py."
+    schema: raw
+    tables:
+      - name: consumption_daily
+        description: "Half-hourly regional electricity consumption (RTE)."
+      - name: consumption_annual
+        description: "Annual regional electricity consumption (RTE)."
+      - name: temperature
+        description: "Daily regional temperature (Météo-France)."
+      - name: production_filiere
+        description: "Annual regional production by source."
+      - name: production_enr
+        description: "Annual regional renewable production."

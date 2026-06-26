@@ -1,0 +1,70 @@
+[0m18:15:22  Running with dbt=1.12.0-b3
+[0m18:15:22  Registered adapter: postgres=1.10.1
+[0m18:15:22  [[33mWARNING[0m]: Configuration paths exist in your dbt_project.yml file which do not apply to any resources.
+There are 1 unused configuration paths:
+- models.energy_analytics.marts
+[0m18:15:22  Found 7 models, 4 data tests, 5 sources, 476 macros
+[0m18:15:22  
+[0m18:15:22  Concurrency: 4 threads (target='dev')
+[0m18:15:22  
+[0m18:15:22  1 of 7 START sql table model public.my_first_dbt_model ......................... [RUN]
+[0m18:15:22  4 of 7 START sql view model public.stg_production_enr .......................... [RUN]
+[0m18:15:22  3 of 7 START sql view model public.stg_consumption_daily ....................... [RUN]
+[0m18:15:22  2 of 7 START sql view model public.stg_consumption_annual ...................... [RUN]
+[0m18:15:23  4 of 7 ERROR creating sql view model public.stg_production_enr ................. [[31mERROR[0m in 0.08s]
+[0m18:15:23  5 of 7 START sql view model public.stg_production_filiere ...................... [RUN]
+[0m18:15:23  3 of 7 ERROR creating sql view model public.stg_consumption_daily .............. [[31mERROR[0m in 0.09s]
+[0m18:15:23  2 of 7 ERROR creating sql view model public.stg_consumption_annual ............. [[31mERROR[0m in 0.07s]
+[0m18:15:23  1 of 7 ERROR creating sql table model public.my_first_dbt_model ................ [[31mERROR[0m in 0.10s]
+[0m18:15:23  6 of 7 START sql view model public.stg_temperature ............................. [RUN]
+[0m18:15:23  7 of 7 SKIP relation public.my_second_dbt_model ................................ [[33mSKIP[0m]
+[0m18:15:23  5 of 7 ERROR creating sql view model public.stg_production_filiere ............. [[31mERROR[0m in 0.03s]
+[0m18:15:23  6 of 7 ERROR creating sql view model public.stg_temperature .................... [[31mERROR[0m in 0.03s]
+[0m18:15:23  
+[0m18:15:23  Finished running 1 table model, 6 view models in 0 hours 0 minutes and 0.24 seconds (0.24s).
+[0m18:15:23  
+[0m18:15:23  [31mCompleted with 6 errors, 0 partial successes, and 0 warnings:[0m
+[0m18:15:23  
+[0m18:15:23  [[31mERROR[0m]: in model stg_production_enr (models/staging/stg_production_enr.sql)
+[0m18:15:23    Database Error in model stg_production_enr (models/staging/stg_production_enr.sql)
+  permission denied for schema public
+  compiled code at target/run/energy_analytics/models/staging/stg_production_enr.sql
+[0m18:15:23  
+[0m18:15:23    compiled code at target/compiled/energy_analytics/models/staging/stg_production_enr.sql
+[0m18:15:23  
+[0m18:15:23  [[31mERROR[0m]: in model stg_consumption_daily (models/staging/stg_consumption_daily.sql)
+[0m18:15:23    Database Error in model stg_consumption_daily (models/staging/stg_consumption_daily.sql)
+  permission denied for schema public
+  compiled code at target/run/energy_analytics/models/staging/stg_consumption_daily.sql
+[0m18:15:23  
+[0m18:15:23    compiled code at target/compiled/energy_analytics/models/staging/stg_consumption_daily.sql
+[0m18:15:23  
+[0m18:15:23  [[31mERROR[0m]: in model stg_consumption_annual (models/staging/stg_consumption_annual.sql)
+[0m18:15:23    Database Error in model stg_consumption_annual (models/staging/stg_consumption_annual.sql)
+  permission denied for schema public
+  compiled code at target/run/energy_analytics/models/staging/stg_consumption_annual.sql
+[0m18:15:23  
+[0m18:15:23    compiled code at target/compiled/energy_analytics/models/staging/stg_consumption_annual.sql
+[0m18:15:23  
+[0m18:15:23  [[31mERROR[0m]: in model my_first_dbt_model (models/example/my_first_dbt_model.sql)
+[0m18:15:23    Database Error in model my_first_dbt_model (models/example/my_first_dbt_model.sql)
+  permission denied for schema public
+  compiled code at target/run/energy_analytics/models/example/my_first_dbt_model.sql
+[0m18:15:23  
+[0m18:15:23    compiled code at target/compiled/energy_analytics/models/example/my_first_dbt_model.sql
+[0m18:15:23  
+[0m18:15:23  [[31mERROR[0m]: in model stg_production_filiere (models/staging/stg_production_filiere.sql)
+[0m18:15:23    Database Error in model stg_production_filiere (models/staging/stg_production_filiere.sql)
+  permission denied for schema public
+  compiled code at target/run/energy_analytics/models/staging/stg_production_filiere.sql
+[0m18:15:23  
+[0m18:15:23    compiled code at target/compiled/energy_analytics/models/staging/stg_production_filiere.sql
+[0m18:15:23  
+[0m18:15:23  [[31mERROR[0m]: in model stg_temperature (models/staging/stg_temperature.sql)
+[0m18:15:23    Database Error in model stg_temperature (models/staging/stg_temperature.sql)
+  permission denied for schema public
+  compiled code at target/run/energy_analytics/models/staging/stg_temperature.sql
+[0m18:15:23  
+[0m18:15:23    compiled code at target/compiled/energy_analytics/models/staging/stg_temperature.sql
+[0m18:15:23  
+[0m18:15:23  Done. PASS=0 WARN=0 ERROR=6 SKIP=1 NO-OP=0 REUSED=0 TOTAL=7

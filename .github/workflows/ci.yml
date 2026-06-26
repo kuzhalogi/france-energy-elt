@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # Job 1: (Python logic) transform & validator unit tests (no database)
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v
+
+  # Job 2: (dbt) load fixtures into raw, then build + test the warehouse
+  dbt-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: energy_user
+          POSTGRES_PASSWORD: passwordenergy
+          POSTGRES_DB: energy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: energy_user
+      PGPASSWORD: passwordenergy
+      PGDATABASE: energy
+      PROCESSED_DATA_DIR: ci/seeds   # load the small committed fixtures, not real data
+      DBT_PROFILES_DIR: .            # use the repo-root profiles.yml
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Load fixtures into raw schema
+        run: python scripts/load.py
+      - name: Install dbt packages
+        working-directory: energy_analytics
+        run: dbt deps
+      - name: Build and test models
+        working-directory: energy_analytics
+        run: dbt build

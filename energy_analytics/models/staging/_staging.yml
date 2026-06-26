@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: stg_consumption_daily
+    description: "Half-hourly regional electricity consumption, typed."
+    columns:
+      - name: date
+        tests: [not_null]
+      - name: region_code
+        tests: [not_null]
+      - name: consumption_mw
+        tests: [not_null]
+      - name: status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["Définitif", "Consolidé"]
+
+  - name: stg_consumption_annual
+    description: "Annual regional electricity consumption, typed."
+    columns:
+      - name: year
+        tests: [not_null]
+      - name: region_code
+        tests: [not_null]
+
+  - name: stg_temperature
+    description: "Daily regional temperature, typed."
+    columns:
+      - name: date
+        tests: [not_null]
+      - name: region_code
+        tests: [not_null]
+
+  - name: stg_production_filiere
+    description: "Annual regional production by source, typed."
+    columns:
+      - name: year
+        tests: [not_null]
+      - name: region_code
+        tests: [not_null]
+
+  - name: stg_production_enr
+    description: "Annual regional renewable production, typed."
+    columns:
+      - name: year
+        tests: [not_null]
+      - name: region_code
+        tests: [not_null]

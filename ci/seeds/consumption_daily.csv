@@ -1,0 +1,5 @@
+datetime,date,hour,region_code,region,consumption_mw,status,consumption_total_mw
+2020-01-01T00:00:00,2020-01-01,00:00,11,Île-de-France,8000,Définitif,8100
+2020-01-01T00:30:00,2020-01-01,00:30,11,Île-de-France,7900,Consolidé,8000
+2020-01-01T00:00:00,2020-01-01,00:00,84,Auvergne-Rhône-Alpes,6000,Définitif,
+2020-01-02T00:00:00,2020-01-02,00:00,11,Île-de-France,8200,Définitif,8300

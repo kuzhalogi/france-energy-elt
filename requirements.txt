@@ -1,0 +1,14 @@
+iniconfig==2.3.0
+loguru==0.7.3
+numpy==2.4.6
+packaging==26.2
+pandas==3.0.3
+pluggy==1.6.0
+Pygments==2.20.0
+pytest==9.0.3
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.2
+six==1.17.0
+pytest>=8.0
+psycopg2-binary==2.9.12
+dbt-postgres>=1.7
