@@ -120,7 +120,7 @@ left join marts.fact_weather_daily fw
        on fc.date = fw.date and fc.region_code = fw.region_code
 ```
 
-All left joins   fact rows with no matching dimension row (2013–2015 weather, or
+All left joins  fact rows with no matching dimension row (2013–2015 weather, or
 Corsica) are kept with nulls rather than dropped.
 
 ## Naming conventions
@@ -150,3 +150,4 @@ test.
   the whole year for a region.
 - Renewable (ENR) detail isn't in a mart yet.
 - Population / per-capita metrics are out of scope.
+

@@ -12,7 +12,7 @@ ODRE API
 data/raw/*.csv            raw downloads, original column names
     │   scripts/preprocess.py rename, type, filter, validate
     ▼
-processed/*.csv           clean files, English column names
+data/processed/*.csv      clean files, English column names
     │   scripts/load.py COPY into Postgres
     ▼
 Postgres: raw schema      landed as text, no logic (bronze)
@@ -36,7 +36,7 @@ dashboard yet (see "Not built yet" at the end).
 ## Stage 2: Preprocess and validate
 
 `scripts/preprocess.py` reads each raw file and produces a clean one in
-`processed/`. Per file it: selects the columns it needs, renames them to English
+`data/processed/`. Per file it: selects the columns it needs, renames them to English
 snake_case, casts types, and applies the dataset's cleaning rules (status filter
 on consumption, structural-zero fill on nuclear, etc.).
 
@@ -106,7 +106,7 @@ energy_analytics/   the dbt project
   profiles.yml           Postgres connection (uses env vars)
 ci/seeds/           small sample files for CI
 data/raw/           raw downloads (not committed)
-processed/          cleaned files (not committed)
+data/processed/     cleaned files (not committed)
 docs/               these documents
 .github/            CI workflow
 ```
@@ -131,3 +131,4 @@ PGDATABASE=energy
   in on top.
 - **Cloud**: everything runs locally on Postgres. A GCP/BigQuery version is the
   planned follow-up.
+

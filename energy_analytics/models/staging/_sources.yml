@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: raw
-    description: "Bronze layer — processed CSVs loaded as-is by scripts/load.py."
+    description: "Bronze layer processed CSVs loaded as-is by scripts/load.py."
     schema: raw
     tables:
       - name: consumption_daily
