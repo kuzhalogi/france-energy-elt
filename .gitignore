@@ -227,3 +227,7 @@ energy_analytics/target/
 energy_analytics/dbt_packages/
 energy_analytics/logs/
 dbt_cloud.yml
+
+# Airflow runtime artifacts
+logs/
+config/airflow.cfg

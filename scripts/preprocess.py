@@ -34,7 +34,7 @@ from loguru import logger
 load_dotenv()
 
 RAW_DIR = Path(os.getenv("RAW_DATA_DIR", "data/raw"))
-PROCESSED_DIR = Path(os.getenv("PROCESSED_DATA_DIR", "processed"))
+PROCESSED_DIR = Path(os.getenv("PROCESSED_DATA_DIR", "data/processed"))
 
 # ─────────────────────────────────────────────
 # Reference data (from data_catalog.md)

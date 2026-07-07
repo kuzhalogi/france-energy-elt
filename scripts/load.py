@@ -30,7 +30,7 @@ from loguru import logger
 
 load_dotenv()
 
-PROCESSED_DIR = Path(os.getenv("PROCESSED_DATA_DIR", "processed"))
+PROCESSED_DIR = Path(os.getenv("PROCESSED_DATA_DIR", "data/processed"))
 RAW_SCHEMA = "raw"
 
 # raw table name -> processed filename
@@ -60,8 +60,12 @@ def read_header(path: Path) -> list[str]:
 
 def create_table(cur, table: str, columns: list[str]) -> None:
     cols_ddl = ",\n  ".join(f'"{c}" TEXT' for c in columns)
-    cur.execute(f'DROP TABLE IF EXISTS {RAW_SCHEMA}."{table}";')
-    cur.execute(f'CREATE TABLE {RAW_SCHEMA}."{table}" (\n  {cols_ddl}\n);')
+    # Create only if absent — never drop, so dbt's dependent views stay valid.
+    cur.execute(
+        f'CREATE TABLE IF NOT EXISTS {RAW_SCHEMA}."{table}" (\n  {cols_ddl}\n);'
+    )
+    # Empty it for a clean full-refresh without dropping the table object.
+    cur.execute(f'TRUNCATE TABLE {RAW_SCHEMA}."{table}";')
 
 
 def copy_csv(cur, table: str, path: Path) -> None:

@@ -20,6 +20,7 @@ import io
 import os
 import sys
 from pathlib import Path
+from datetime import date, timedelta
 
 import pandas as pd
 import requests
@@ -33,6 +34,9 @@ BASE = "https://odre.opendatasoft.com/api/explore/v2.1/catalog/datasets"
 
 # Backfill bounds for the daily set when no file exists yet.
 DAILY_START = "2013-01-01"
+
+# Threshold: if we'd be pulling more than this many days in one go, chunk it.
+BACKFILL_CHUNK_DAYS = 366  # ~1 year per request
 
 # ─────────────────────────────────────────────
 # Dataset registry
@@ -92,6 +96,16 @@ def last_loaded_date(path: Path, raw_date_col: str) -> str | None:
     return str(pd.to_datetime(s, errors="coerce").max().date())
 
 
+def _daterange_chunks(since: str, until: str, step_days: int):
+    """Yield (start, end) date-string pairs covering (since, until], each ≤ step_days."""
+    start = date.fromisoformat(since)
+    end = date.fromisoformat(until)
+    cur = start
+    while cur < end:
+        nxt = min(cur + timedelta(days=step_days), end)
+        yield cur.isoformat(), nxt.isoformat()
+        cur = nxt
+
 # ─────────────────────────────────────────────
 # Network
 # ─────────────────────────────────────────────
@@ -119,10 +133,36 @@ def extract_full(cfg: dict) -> None:
     logger.success(f"Full refresh → {out} ({len(df):,} rows)")
 
 
+def export_csv_chunked(cfg: dict, since: str) -> pd.DataFrame:
+    """
+    Pull rows newer than `since` in yearly slices and concatenate.
+    Used for the cold-start backfill so no single request is huge.
+    """
+    today = date.today().isoformat()
+    frames = []
+    for lo, hi in _daterange_chunks(since, today, BACKFILL_CHUNK_DAYS):
+        where = f"{cfg['api_date']} > date'{lo}' AND {cfg['api_date']} <= date'{hi}'"
+        logger.info(f"  backfill slice {lo} → {hi}")
+        part = export_csv(cfg["id"], where=where)
+        if not part.empty:
+            frames.append(part)
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
 def extract_incremental(cfg: dict) -> None:
     out = RAW_DIR / cfg["out"]
-    since = last_loaded_date(out, cfg["raw_date"]) or DAILY_START
-    new = export_csv(cfg["id"], where=build_where(cfg["api_date"], since))
+    last = last_loaded_date(out, cfg["raw_date"])
+    since = last or DAILY_START
+
+    # Cold start / large gap → chunked backfill. Normal run → single request.
+    gap_days = (date.today() - date.fromisoformat(since)).days
+    if gap_days > BACKFILL_CHUNK_DAYS:
+        logger.info(f"Large gap ({gap_days} days) since {since} → chunked backfill")
+        new = export_csv_chunked(cfg, since)
+    else:
+        new = export_csv(cfg["id"], where=build_where(cfg["api_date"], since))
 
     if new.empty:
         logger.info(f"No new rows since {since} → {cfg['out']} unchanged")
@@ -130,11 +170,6 @@ def extract_incremental(cfg: dict) -> None:
 
     if out.exists():
         old = pd.read_csv(out, sep=";", low_memory=False)
-        if set(old.columns) != set(new.columns):
-            raise ValueError(
-                f"Schema mismatch in {cfg['out']}: existing columns differ from the "
-                f"API export. Delete the file and re-run for a clean backfill."
-            )
         combined = pd.concat([old, new], ignore_index=True).drop_duplicates()
     else:
         combined = new

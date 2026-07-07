@@ -1,0 +1,150 @@
+# Airflow 3.2.2 local stack (LocalExecutor) + a separate "warehouse" Postgres.
+# Trimmed from the official compose file: no Redis / Celery worker / Flower.
+#
+# Two Postgres services, do not confuse them:
+#   - airflow-metadata-db : Airflow's internal bookkeeping ONLY
+#   - warehouse           : YOUR data warehouse (raw + dbt staging/intermediate/marts)
+#
+# Inside this network, services reach each other by SERVICE NAME as hostname.
+# So the warehouse is "warehouse:5432" from any Airflow container (never localhost).
+
+x-airflow-common: &airflow-common
+  build: .
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-metadata-db/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_SECRET_KEY}
+    # --- warehouse connection, injected for CONTAINERS (overrides .env) ---
+    # These names match your profiles.yml env_var() calls and your scripts.
+    # host = service name, port = INTERNAL port (5432), not the host-mapped 5433.
+    PGHOST: warehouse
+    PGPORT: '5432'
+    PGUSER: ${PGUSER:-energy_user}
+    PGPASSWORD: ${PGPASSWORD:-energy_pass}
+    PGDATABASE: ${PGDATABASE:-energy}
+    RAW_DATA_DIR: /opt/airflow/data/raw
+    PROCESSED_DATA_DIR: /opt/airflow/data/processed
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./config:/opt/airflow/config
+    - ./scripts:/opt/airflow/scripts
+    - ./energy_analytics:/opt/airflow/energy_analytics
+    - ./data:/opt/airflow/data
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on: &airflow-common-depends-on
+    airflow-metadata-db:
+      condition: service_healthy
+
+services:
+  # ---- Airflow's own metadata DB (internal state only) ----
+  airflow-metadata-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow-metadata-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--local"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+
+  # ---- YOUR data warehouse ----
+  # POSTGRES_* (used to create the DB/user on first boot) are fed the SAME
+  # values as dbt's PG* vars, so there is a single source of truth.
+  warehouse:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${PGUSER:-energy_user}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-energy_pass}
+      POSTGRES_DB: ${PGDATABASE:-energy}
+    ports:
+      - "5433:5432"   # host 5433 -> container 5432, avoids clashing with a local Postgres
+    volumes:
+      - warehouse-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${PGUSER:-energy_user}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  # ---- Airflow control plane ----
+  airflow-apiserver:
+    <<: *airflow-common
+    command: api-server
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "DagProcessorJob", "--hostname", "$${HOSTNAME}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  # ---- One-shot init: migrate metadata DB + create the UI login user ----
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username airflow --password airflow \
+          --firstname admin --lastname user --role Admin --email admin@example.com || true
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+    user: "0:0"
+    depends_on:
+      airflow-metadata-db:
+        condition: service_healthy
+
+volumes:
+  airflow-metadata-db-volume:
+  warehouse-volume:
