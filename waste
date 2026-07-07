@@ -1,0 +1,41 @@
+git add docker-compose.yaml Dockerfile dags/energy_pipeline.py requirements.txt .env.example .gitignore
+git commit -F- <<'EOF'
+feat: orchestrate the ELT pipeline with Airflow on Docker
+
+Add a local Airflow 3.2.2 stack (LocalExecutor) that orchestrates the
+existing pipeline as a single DAG:
+
+    extract -> preprocess -> load -> dbt_build
+
+with @daily scheduling, catchup disabled, 2 retries on the API/IO tasks,
+and retries=0 on dbt_build (deterministic failures gain nothing from retry).
+
+Architecture:
+- Two separate Postgres services on one network: airflow-metadata-db
+  (Airflow's internal bookkeeping) and warehouse (the data warehouse holding
+  raw + dbt's staging/intermediate/marts). Kept distinct to avoid any chance
+  of dbt or the scripts touching Airflow's metadata DB.
+- LocalExecutor chosen over Celery: no Redis/worker/Flower needed for a
+  single-host setup, fewer moving parts.
+- Custom image (Dockerfile) layers dbt-postgres + the pipeline's runtime
+  deps onto the official Airflow base; all Airflow services share it.
+- scripts/, energy_analytics/, dags/, and data/ are bind-mounted, so code
+  edits are live without a rebuild (rebuild only on requirements changes).
+
+Config notes:
+- PG* connection vars are injected per-container (PGHOST=warehouse, internal
+  port 5432) and override the laptop-facing .env defaults (127.0.0.1:5433),
+  so the same profiles.yml/scripts work in both contexts unchanged.
+- RAW_DATA_DIR / PROCESSED_DATA_DIR set to absolute mounted paths so dir
+  resolution never depends on the working directory.
+- AIRFLOW__API_AUTH__JWT_SECRET set across all components (see note below).
+
+Notable Airflow 3.x gotcha: in 3.x, task subprocesses authenticate back to
+the execution API via a JWT signed with [api_auth] jwt_secret. If that key
+isn't shared across scheduler and api-server, every triggered task dies
+during setup surfacing as "executor reported the task finished failed,
+but the task instance's state attribute is queued", with one-line task logs
+and no traceback. Setting a single shared AIRFLOW__API_AUTH__JWT_SECRET (and
+SECRET_KEY) for all services resolves it. dags test masks the issue because
+it runs in-process and skips the authenticated callback.
+EOF
