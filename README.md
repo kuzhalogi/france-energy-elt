@@ -85,6 +85,8 @@ the whole pipeline runs as one scheduled job instead of four manual commands:
 extract -> preprocess -> load -> dbt_build
 ```
 
+![Airflow DAG run](docs/images/airflow-dag.png)
+
 It runs on a daily schedule, with retries on the API and IO steps. The whole stack
 runs locally in Docker, so there is no setup beyond `docker compose up`.
 
@@ -122,12 +124,13 @@ PGPORT=5433        # the warehouse container maps to host port 5433
 PGUSER=energy_user
 PGPASSWORD=yourpassword
 PGDATABASE=energy
+AIRFLOW_SECRET_KEY=changeme   # shared by Airflow's API secret and JWT secret
 ```
 
 ### With Airflow (the normal way)
 
 ```bash
-cp .env.example .env                    # set warehouse creds + a JWT secret
+cp .env.example .env                    # set warehouse creds + the Airflow secret
 echo "AIRFLOW_UID=$(id -u)" >> .env     # Linux only
 
 docker compose build

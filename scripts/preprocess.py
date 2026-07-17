@@ -1,7 +1,7 @@
 """
 preprocess.py
 -------------
-Cleans raw CSV files from DE/Data/ and writes processed outputs to processed/.
+Cleans raw CSV files from data/raw/ and writes processed outputs to data/processed/.
 
 Architecture (so CI can test the logic without the real data):
 
